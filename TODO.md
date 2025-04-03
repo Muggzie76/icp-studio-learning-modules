@@ -74,12 +74,12 @@
     - Quiz submission and validation
     - Results feedback
 
-- [ ] 15. Create user profile section
+- [x] 15. Create user profile section
     - Progress overview
     - Token balance display
     - Achievement tracking
 
-- [ ] 16. Develop responsive mobile design
+- [x] 16. Develop responsive mobile design
     - Ensure compatibility across devices
     - Optimize UI for different screen sizes
 

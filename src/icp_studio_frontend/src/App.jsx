@@ -11,6 +11,7 @@ import UserManagementPage from './pages/UserManagementPage.jsx';
 import AdminManagementPage from './pages/AdminManagementPage.jsx';
 import LearningPage from './pages/LearningPage.jsx';
 import ModuleContentPage from './pages/ModuleContentPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 
 // Protected Routes
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/learn" element={<LearningPage />} />
         <Route path="/module/:moduleId" element={<ModuleContentPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         
         {/* Admin Routes */}
         <Route element={<AdminRoute />}>

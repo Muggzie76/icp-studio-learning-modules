@@ -12,6 +12,7 @@ import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import TrieMap "mo:base/TrieMap";
+import Debug "mo:base/Debug";
 
 actor IcpStudio {
   // Stable storage - these variables persist across canister upgrades
@@ -37,8 +38,8 @@ actor IcpStudio {
   var adminActivities = Buffer.Buffer<Types.AdminActivity>(0);
   var quizSubmissions = Buffer.Buffer<Types.QuizSubmission>(0);
   
-  // Default admin principal - this should be replaced with your actual admin's principal
-  let defaultAdminPrincipal : Principal = Principal.fromText("aaaaa-aa");
+  // Default admin is set during initialization
+  let defaultAdminPrincipal : Principal = Principal.fromText("rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae");
   
   // Initialize the canister - executed once when first deployed
   private func initialize() {
@@ -52,6 +53,33 @@ actor IcpStudio {
         totalTokens = 0;
       };
       users.put(defaultAdminPrincipal, adminProfile);
+    } else {
+      // Ensure the default admin exists even if other users are present
+      switch (users.get(defaultAdminPrincipal)) {
+        case (null) {
+          let adminProfile : Types.UserProfile = {
+            id = defaultAdminPrincipal;
+            username = "Admin";
+            role = #Admin;
+            createdAt = Time.now();
+            totalTokens = 0;
+          };
+          users.put(defaultAdminPrincipal, adminProfile);
+        };
+        case (?userProfile) {
+          // If user exists but is not admin, promote to admin
+          if (userProfile.role != #Admin) {
+            let updatedProfile : Types.UserProfile = {
+              id = userProfile.id;
+              username = userProfile.username;
+              role = #Admin;
+              createdAt = userProfile.createdAt;
+              totalTokens = userProfile.totalTokens;
+            };
+            users.put(defaultAdminPrincipal, updatedProfile);
+          };
+        };
+      };
     };
   };
   
@@ -156,7 +184,21 @@ actor IcpStudio {
   
   // Add a new admin (only callable by existing admins)
   public shared(msg) func addAdmin(newAdminPrincipal : Principal, username : Text) : async Result.Result<(), Text> {
-    if (not isAdmin(msg.caller)) {
+    let caller = msg.caller;
+    
+    // Check if there are no admins yet (first admin setup)
+    let adminCount = Array.filter<Types.UserProfile>(Iter.toArray(users.vals()), func(user) {
+      switch (user.role) {
+        case (#Admin) { true };
+        case (_) { false };
+      };
+    }).size();
+    
+    // If no admins exist yet, allow the first admin to be created without restrictions
+    // Otherwise, verify the caller is an admin
+    if (adminCount == 0) {
+      Debug.print("First admin creation - no authentication required");
+    } else if (not isAdmin(caller)) {
       return #err("Unauthorized: Only admins can add new admins");
     };
     
@@ -1814,5 +1856,18 @@ actor IcpStudio {
   
   public query func greet(name : Text) : async Text {
     return "Hello, " # name # "! Welcome to ICP Studio!";
+  };
+
+  // Check if a specific user is an admin (accessible from frontend)
+  public query func isUserAdmin(userId : Principal) : async Bool {
+    switch (users.get(userId)) {
+      case (null) { false };
+      case (?userProfile) {
+        switch (userProfile.role) {
+          case (#Admin) { true };
+          case (_) { false };
+        };
+      };
+    };
   };
 };

@@ -89,7 +89,7 @@ function HomePage() {
               Go to Admin Dashboard
             </GetStartedButton>
           ) : (
-            <GetStartedButton onClick={() => window.location.href = '/modules'}>
+            <GetStartedButton onClick={() => window.location.href = '/learn'}>
               Start Learning
             </GetStartedButton>
           )}

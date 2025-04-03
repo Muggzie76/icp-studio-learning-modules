@@ -104,7 +104,7 @@ function Navbar() {
             <NavLink to="/" active={isActive('/')}>
               Home
             </NavLink>
-            <NavLink to="/modules" active={isActive('/modules')}>
+            <NavLink to="/learn" active={isActive('/learn') || location.pathname.startsWith('/module/')}>
               Learning Modules
             </NavLink>
             <NavLink to="/profile" active={isActive('/profile')}>
@@ -121,6 +121,9 @@ function Navbar() {
                 </NavLink>
                 <NavLink to="/admin/users" active={isActive('/admin/users')}>
                   Manage Users
+                </NavLink>
+                <NavLink to="/admin/admins" active={isActive('/admin/admins')}>
+                  Manage Admins
                 </NavLink>
               </>
             )}

@@ -16,6 +16,10 @@ DEFAULT_ADMIN_PRINCIPAL="rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-o
 MIN_CYCLES_REQUIRED=12000000000000 # 12T cycles
 OUTPUT_LOG="mainnet-deployment-$(date +%Y%m%d-%H%M%S).log"
 
+# Fixed canister IDs
+BACKEND_CANISTER_ID="cgcmi-laaaa-aaaad-aalsq-cai"
+FRONTEND_CANISTER_ID="orpwc-cqaaa-aaaam-qdktq-cai"
+
 # Start logging
 exec > >(tee -a "$OUTPUT_LOG") 2>&1
 
@@ -107,11 +111,13 @@ echo -e "Generating Candid interfaces..."
 dfx generate
 check_command "Candid interfaces generated"
 
-echo -e "\n${BOLD}Step 3: Canister Creation and Deployment${NC}"
+echo -e "\n${BOLD}Step 3: Canister Verification and Deployment${NC}"
 echo -e "----------------------------------------"
 
 # Confirm deployment
-echo -e "${YELLOW}⚠ You are about to deploy ICP Studio to the IC mainnet.${NC}"
+echo -e "${YELLOW}⚠ You are about to deploy ICP Studio to the IC mainnet using the following fixed canister IDs:${NC}"
+echo -e "  Backend: ${BLUE}$BACKEND_CANISTER_ID${NC}"
+echo -e "  Frontend: ${BLUE}$FRONTEND_CANISTER_ID${NC}"
 echo -e "This will use real cycles and deploy to production."
 echo -e "Are you sure you want to continue? (y/n)"
 read -p "Enter your choice: " deployment_confirmed
@@ -121,63 +127,72 @@ if [[ $deployment_confirmed != "y" && $deployment_confirmed != "Y" ]]; then
     exit 0
 fi
 
-# Create canisters
-echo -e "Creating canisters on mainnet..."
-dfx canister --network ic create icp_studio_backend
-check_command "Backend canister created"
+# Verify canisters exist
+echo -e "Verifying canisters exist..."
+dfx canister --network ic status $BACKEND_CANISTER_ID > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}✘ Error: Backend canister $BACKEND_CANISTER_ID does not exist or is not accessible.${NC}"
+    echo -e "Please verify the canister ID and your access rights."
+    exit 1
+fi
 
-dfx canister --network ic create icp_studio_frontend
-check_command "Frontend canister created"
-
-# Record canister IDs
-BACKEND_ID=$(dfx canister --network ic id icp_studio_backend)
-FRONTEND_ID=$(dfx canister --network ic id icp_studio_frontend)
-
-echo -e "Canister IDs:"
-echo -e "  Backend: ${BLUE}$BACKEND_ID${NC}"
-echo -e "  Frontend: ${BLUE}$FRONTEND_ID${NC}"
+dfx canister --network ic status $FRONTEND_CANISTER_ID > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}✘ Error: Frontend canister $FRONTEND_CANISTER_ID does not exist or is not accessible.${NC}"
+    echo -e "Please verify the canister ID and your access rights."
+    exit 1
+fi
+echo -e "${GREEN}✓ Canisters verified successfully${NC}"
 
 # Store canister IDs for future reference
 echo "Deployment Date: $(date)" > deploy-info.txt
-echo "Backend Canister ID: $BACKEND_ID" >> deploy-info.txt
-echo "Frontend Canister ID: $FRONTEND_ID" >> deploy-info.txt
+echo "Backend Canister ID: $BACKEND_CANISTER_ID" >> deploy-info.txt
+echo "Frontend Canister ID: $FRONTEND_CANISTER_ID" >> deploy-info.txt
 echo "Cycles Balance: $CYCLES" >> deploy-info.txt
 
 # Deploy code
 echo -e "Installing backend code..."
-dfx canister --network ic install icp_studio_backend
+dfx canister --network ic install icp_studio_backend --mode upgrade --wasm-path .dfx/ic/canisters/icp_studio_backend/icp_studio_backend.wasm.gz
 check_command "Backend code installed"
 
 echo -e "Installing frontend code..."
-dfx canister --network ic install icp_studio_frontend
+dfx canister --network ic install icp_studio_frontend --mode upgrade --wasm-path .dfx/ic/canisters/icp_studio_frontend/icp_studio_frontend.wasm.gz
 check_command "Frontend code installed"
 
 echo -e "\n${BOLD}Step 4: Post-Deployment Initialization${NC}"
 echo -e "----------------------------------------"
 
-# Initialize the backend
-echo -e "Initializing backend with default admin..."
-dfx canister --network ic call icp_studio_backend initialize "(principal \"$DEFAULT_ADMIN_PRINCIPAL\")"
-check_command "Backend initialized with default admin"
+# Check if we need to initialize the backend (only for first deployment)
+echo -e "Checking if backend needs initialization..."
+ADMIN_CHECK=$(dfx canister --network ic call $BACKEND_CANISTER_ID isUserAdmin "(principal \"$DEFAULT_ADMIN_PRINCIPAL\")" 2>&1)
 
-# Verify admin was set correctly
-echo -e "Verifying admin was set correctly..."
-ADMIN_CHECK=$(dfx canister --network ic call icp_studio_backend isUserAdmin "(principal \"$DEFAULT_ADMIN_PRINCIPAL\")")
-if [[ $ADMIN_CHECK != "(true)" ]]; then
-    echo -e "${RED}✘ Error: Admin verification failed. Expected '(true)' but got '$ADMIN_CHECK'${NC}"
-    exit 1
+if [[ $ADMIN_CHECK == *"Error"* || $ADMIN_CHECK == *"reject"* ]]; then
+    echo -e "${YELLOW}⚠ Backend appears uninitialized. Initializing with default admin...${NC}"
+    
+    # Initialize the backend
+    dfx canister --network ic call $BACKEND_CANISTER_ID initialize "(principal \"$DEFAULT_ADMIN_PRINCIPAL\")"
+    check_command "Backend initialized with default admin"
+    
+    # Verify admin was set correctly
+    ADMIN_CHECK=$(dfx canister --network ic call $BACKEND_CANISTER_ID isUserAdmin "(principal \"$DEFAULT_ADMIN_PRINCIPAL\")")
+    if [[ $ADMIN_CHECK != "(true)" ]]; then
+        echo -e "${RED}✘ Error: Admin verification failed. Expected '(true)' but got '$ADMIN_CHECK'${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Admin verification successful${NC}"
+else
+    echo -e "${GREEN}✓ Backend already initialized, admin check returned: $ADMIN_CHECK${NC}"
 fi
-echo -e "${GREEN}✓ Admin verification successful${NC}"
 
 echo -e "\n${BOLD}Step 5: Canister Settings Configuration${NC}"
 echo -e "----------------------------------------"
 
 # Configure freezing threshold
 echo -e "Setting freezing threshold (30 days)..."
-dfx canister --network ic update-settings --freezing-threshold 2592000 icp_studio_backend
+dfx canister --network ic update-settings --freezing-threshold 2592000 $BACKEND_CANISTER_ID
 check_command "Backend freezing threshold set"
 
-dfx canister --network ic update-settings --freezing-threshold 2592000 icp_studio_frontend
+dfx canister --network ic update-settings --freezing-threshold 2592000 $FRONTEND_CANISTER_ID
 check_command "Frontend freezing threshold set"
 
 echo -e "\n${BOLD}Step 6: Post-Deployment Verification${NC}"
@@ -185,16 +200,16 @@ echo -e "----------------------------------------"
 
 # Verify canisters are running
 echo -e "Verifying backend canister status..."
-dfx canister --network ic status icp_studio_backend
+dfx canister --network ic status $BACKEND_CANISTER_ID
 check_command "Backend canister is running"
 
 echo -e "Verifying frontend canister status..."
-dfx canister --network ic status icp_studio_frontend
+dfx canister --network ic status $FRONTEND_CANISTER_ID
 check_command "Frontend canister is running"
 
 # Fetch frontend URL
 echo -e "Attempting to fetch frontend URL..."
-curl -s -o /dev/null -w "%{http_code}" "https://$FRONTEND_ID.ic0.app/"
+curl -s -o /dev/null -w "%{http_code}" "https://$FRONTEND_CANISTER_ID.ic0.app/"
 if [ $? -ne 0 ]; then
     echo -e "${YELLOW}⚠ Could not verify frontend accessibility. This might be normal if propagation is not complete.${NC}"
 else
@@ -208,12 +223,12 @@ echo -e "Deployment completed successfully at $(date)!"
 echo -e "ICP Studio has been deployed to the mainnet."
 echo -e ""
 echo -e "📊 Canister IDs:"
-echo -e "  - Backend: ${BLUE}$BACKEND_ID${NC}"
-echo -e "  - Frontend: ${BLUE}$FRONTEND_ID${NC}"
+echo -e "  - Backend: ${BLUE}$BACKEND_CANISTER_ID${NC}"
+echo -e "  - Frontend: ${BLUE}$FRONTEND_CANISTER_ID${NC}"
 echo -e ""
 echo -e "🌐 Access URLs:"
-echo -e "  - Frontend: ${BLUE}https://$FRONTEND_ID.ic0.app/${NC}"
-echo -e "  - Backend: ${BLUE}https://$BACKEND_ID.ic0.app/${NC}"
+echo -e "  - Frontend: ${BLUE}https://$FRONTEND_CANISTER_ID.ic0.app/${NC}"
+echo -e "  - Backend: ${BLUE}https://$BACKEND_CANISTER_ID.ic0.app/${NC}"
 echo -e ""
 echo -e "💰 Cycles Balance: $CYCLES"
 echo -e ""

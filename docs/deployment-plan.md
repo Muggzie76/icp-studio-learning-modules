@@ -63,6 +63,15 @@ Note: T = trillion cycles. Actual consumption may vary based on usage patterns.
 
 ## Deployment Process
 
+### Fixed Canister IDs
+
+ICP Studio uses the following fixed canister IDs for deployment:
+
+- **Backend Canister ID**: `cgcmi-laaaa-aaaad-aalsq-cai`
+- **Frontend Canister ID**: `orpwc-cqaaa-aaaam-qdktq-cai`
+
+These canister IDs are already registered on the IC mainnet and should be used for all deployments and verifications.
+
 ### Step 1: Identity and Wallet Setup
 
 ```bash
@@ -86,51 +95,56 @@ npm run build
 dfx generate
 ```
 
-### Step 3: Create Canisters
+### Step 3: Verify Canister Access
 
 ```bash
-# Create the canisters
-dfx canister --network ic create icp_studio_backend
-dfx canister --network ic create icp_studio_frontend
+# Verify access to the backend canister
+dfx canister --network ic status cgcmi-laaaa-aaaad-aalsq-cai
+
+# Verify access to the frontend canister
+dfx canister --network ic status orpwc-cqaaa-aaaam-qdktq-cai
 ```
 
 ### Step 4: Install Code
 
 ```bash
-# Install backend code
-dfx canister --network ic install icp_studio_backend
+# Install backend code (upgrade mode)
+dfx canister --network ic install icp_studio_backend --mode upgrade --wasm-path .dfx/ic/canisters/icp_studio_backend/icp_studio_backend.wasm.gz
 
-# Install frontend code
-dfx canister --network ic install icp_studio_frontend
+# Install frontend code (upgrade mode)
+dfx canister --network ic install icp_studio_frontend --mode upgrade --wasm-path .dfx/ic/canisters/icp_studio_frontend/icp_studio_frontend.wasm.gz
 ```
 
-### Step 5: Initialize Backend State
+### Step 5: Initialize Backend State (First Deployment Only)
 
 ```bash
-# Set default admin principal
-dfx canister --network ic call icp_studio_backend initialize '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
+# Check if initialization is needed
+dfx canister --network ic call cgcmi-laaaa-aaaad-aalsq-cai isUserAdmin '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
+
+# If the above returns an error, initialize the backend
+dfx canister --network ic call cgcmi-laaaa-aaaad-aalsq-cai initialize '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
 
 # Verify admin was set correctly
-dfx canister --network ic call icp_studio_backend isUserAdmin '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
+dfx canister --network ic call cgcmi-laaaa-aaaad-aalsq-cai isUserAdmin '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
 ```
 
 ### Step 6: Set Canister Settings
 
 ```bash
 # Set controllers for each canister (optional for additional security)
-dfx canister --network ic update-settings --controller <CONTROLLER_PRINCIPAL> icp_studio_backend
-dfx canister --network ic update-settings --controller <CONTROLLER_PRINCIPAL> icp_studio_frontend
+dfx canister --network ic update-settings --controller <CONTROLLER_PRINCIPAL> cgcmi-laaaa-aaaad-aalsq-cai
+dfx canister --network ic update-settings --controller <CONTROLLER_PRINCIPAL> orpwc-cqaaa-aaaam-qdktq-cai
 
 # Configure freezing threshold (in seconds)
-dfx canister --network ic update-settings --freezing-threshold '2592000' icp_studio_backend  # 30 days
-dfx canister --network ic update-settings --freezing-threshold '2592000' icp_studio_frontend  # 30 days
+dfx canister --network ic update-settings --freezing-threshold '2592000' cgcmi-laaaa-aaaad-aalsq-cai  # 30 days
+dfx canister --network ic update-settings --freezing-threshold '2592000' orpwc-cqaaa-aaaam-qdktq-cai  # 30 days
 ```
 
 ## Post-Deployment Verification
 
 ### Basic Functionality Tests
 
-- [ ] Navigate to frontend URL (https://<frontend-canister-id>.ic0.app/)
+- [ ] Navigate to frontend URL (https://orpwc-cqaaa-aaaam-qdktq-cai.ic0.app/)
 - [ ] Verify the application loads correctly
 - [ ] Test user authentication with Internet Identity
 - [ ] Verify admin access with the default admin principal
@@ -184,11 +198,11 @@ For the first 48 hours after deployment, perform intensive monitoring:
 
 ```bash
 # Reinstall the previous version
-dfx canister --network ic install icp_studio_backend --mode reinstall --wasm-path ./previous_versions/icp_studio_backend_<VERSION>.wasm
-dfx canister --network ic install icp_studio_frontend --mode reinstall --wasm-path ./previous_versions/icp_studio_frontend_<VERSION>.wasm
+dfx canister --network ic install cgcmi-laaaa-aaaad-aalsq-cai --mode reinstall --wasm-path ./previous_versions/icp_studio_backend_<VERSION>.wasm
+dfx canister --network ic install orpwc-cqaaa-aaaam-qdktq-cai --mode reinstall --wasm-path ./previous_versions/icp_studio_frontend_<VERSION>.wasm
 
 # Reinitialize the backend if necessary
-dfx canister --network ic call icp_studio_backend initialize '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
+dfx canister --network ic call cgcmi-laaaa-aaaad-aalsq-cai initialize '(principal "rmmnq-lp6ph-jecfe-unios-34txb-5cwzz-h3uzu-plyvf-ac67t-ooltr-bae")'
 ```
 
 4. **Verification**: Verify basic functionality after rollback

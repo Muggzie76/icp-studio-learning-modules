@@ -27,6 +27,12 @@ const colors = {
   blue: '\x1b[34m'
 };
 
+// Fixed canister IDs
+const FIXED_CANISTER_IDS = {
+  backend: 'cgcmi-laaaa-aaaad-aalsq-cai',
+  frontend: 'orpwc-cqaaa-aaaam-qdktq-cai'
+};
+
 // Configuration
 const CONFIG = {
   network: 'ic',
@@ -66,6 +72,7 @@ function formatTime(ms) {
 
 async function getCanisterIds() {
   try {
+    // Try to get canister IDs from deploy-info.txt
     if (fs.existsSync(CONFIG.deployInfoPath)) {
       const deployInfo = fs.readFileSync(CONFIG.deployInfoPath, 'utf8');
       const backendMatch = deployInfo.match(/Backend Canister ID: ([\w-]+)/);
@@ -80,15 +87,28 @@ async function getCanisterIds() {
     }
     
     // If deploy-info.txt doesn't exist or doesn't contain the expected information,
-    // get canister IDs from dfx
-    log(`${colors.yellow}⚠ Could not find canister IDs in deploy-info.txt. Using dfx to retrieve them.${colors.reset}`);
-    const backendId = execSync(`dfx canister --network ${CONFIG.network} id icp_studio_backend`).toString().trim();
-    const frontendId = execSync(`dfx canister --network ${CONFIG.network} id icp_studio_frontend`).toString().trim();
-    
-    return { backend: backendId, frontend: frontendId };
+    // first try to get canister IDs from dfx
+    try {
+      log(`${colors.yellow}⚠ Could not find canister IDs in deploy-info.txt. Using dfx to retrieve them.${colors.reset}`);
+      const backendId = execSync(`dfx canister --network ${CONFIG.network} id icp_studio_backend`).toString().trim();
+      const frontendId = execSync(`dfx canister --network ${CONFIG.network} id icp_studio_frontend`).toString().trim();
+      
+      return { backend: backendId, frontend: frontendId };
+    } catch (dfxError) {
+      // If dfx command fails, use the fixed canister IDs
+      log(`${colors.yellow}⚠ Could not retrieve canister IDs from dfx. Using fixed canister IDs.${colors.reset}`);
+      log(`  Backend: ${FIXED_CANISTER_IDS.backend}`);
+      log(`  Frontend: ${FIXED_CANISTER_IDS.frontend}`);
+      
+      return FIXED_CANISTER_IDS;
+    }
   } catch (error) {
-    log(`${colors.red}✘ Error getting canister IDs: ${error.message}${colors.reset}`);
-    process.exit(1);
+    // Fallback to fixed canister IDs
+    log(`${colors.yellow}⚠ Error getting canister IDs: ${error.message}. Using fixed canister IDs.${colors.reset}`);
+    log(`  Backend: ${FIXED_CANISTER_IDS.backend}`);
+    log(`  Frontend: ${FIXED_CANISTER_IDS.frontend}`);
+    
+    return FIXED_CANISTER_IDS;
   }
 }
 
@@ -356,6 +376,9 @@ async function main() {
   try {
     logSection('ICP Studio Mainnet Verification');
     log(`Verification started: ${new Date().toISOString()}`);
+    log(`Using fixed canister IDs if needed:`);
+    log(`  Backend: ${FIXED_CANISTER_IDS.backend}`);
+    log(`  Frontend: ${FIXED_CANISTER_IDS.frontend}`);
     log(`Log file: ${LOG_FILE}`);
     
     // Get canister IDs

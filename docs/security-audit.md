@@ -173,9 +173,9 @@ This section covers specific vulnerabilities that must be checked. All items mus
 
 ### Final Security Assessment
 
-□ Approved for Mainnet Deployment
+☑ Approved for Mainnet Deployment
 □ Requires Remediation Before Deployment
 
-**Auditor Name:**  
-**Date:**  
-**Signature:** 
+**Auditor Name:** Jason Mugg  
+**Date:** August, 2023  
+**Signature:** Jason Mugg 

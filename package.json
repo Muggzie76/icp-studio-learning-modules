@@ -14,5 +14,13 @@
   "type": "module",
   "workspaces": [
     "src/icp_studio_frontend"
-  ]
+  ],
+  "dependencies": {
+    "@dfinity/agent": "^2.4.0",
+    "@dfinity/auth-client": "^2.4.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.4.1",
+    "styled-components": "^6.1.17"
+  }
 }

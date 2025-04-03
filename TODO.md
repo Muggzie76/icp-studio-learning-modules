@@ -111,7 +111,7 @@
     - Measure performance
     - Verify cycles consumption
 
-- [ ] 22. Create documentation
+- [x] 22. Create documentation
     - Admin user guide
     - End-user instructions
     - API documentation

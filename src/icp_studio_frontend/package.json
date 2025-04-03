@@ -9,7 +9,16 @@
     "prebuild": "dfx generate",
     "build": "tsc && vite build",
     "format": "prettier --write \"src/**/*.{json,js,jsx,ts,tsx,css,scss}\"",
-    "test": "jest"
+    "test": "jest",
+    "dfx:start": "dfx start --clean --background",
+    "dfx:stop": "dfx stop",
+    "dfx:deploy": "dfx deploy",
+    "dfx:deploy:local": "dfx deploy --network local",
+    "dfx:deploy:clean": "dfx deploy --clean",
+    "local:test": "npm run build && dfx deploy --network local",
+    "local:dev": "npm run dfx:start && npm run build && npm run dfx:deploy:local && npm run start",
+    "local:verify": "node src/scripts/check-deployment.js",
+    "local:deploy": "chmod +x src/scripts/deploy-local.sh && src/scripts/deploy-local.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",

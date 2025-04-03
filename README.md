@@ -77,17 +77,79 @@ Run the test suite:
 npm test
 ```
 
-## Deployment
+## Deployment & Testing
 
-1. Ensure you have cycles in your wallet:
+### Local Development Deployment
+
+To deploy and test the ICP Studio application locally, follow these steps:
+
+1. **Make sure the DFINITY SDK is installed**
+
    ```bash
-   dfx wallet balance
+   sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
    ```
 
-2. Deploy to mainnet:
+2. **Use the automated deployment script**
+
    ```bash
-   dfx deploy --network ic
+   npm run local:deploy
    ```
+
+   This script will:
+   - Stop any running local replicas
+   - Start a clean local replica
+   - Build the project
+   - Generate type declarations
+   - Deploy the canisters
+   - Start the development server
+
+3. **Verify the deployment**
+
+   ```bash
+   npm run local:verify
+   ```
+
+   This will check:
+   - If canister IDs are correctly generated
+   - If the frontend canister is accessible
+   - If the backend canister responds to queries
+
+### Alternative Deployment Options
+
+- **Start the local replica manually**
+
+  ```bash
+  dfx start --clean --background
+  ```
+
+- **Deploy canisters only**
+
+  ```bash
+  npm run dfx:deploy
+  ```
+
+- **Clean deployment (rebuilds canisters)**
+
+  ```bash
+  npm run dfx:deploy:clean
+  ```
+
+- **Build and run development server**
+
+  ```bash
+  npm run local:dev
+  ```
+
+### Accessing the Application
+
+After deployment, you can access the application in two ways:
+
+1. **Through the development server**:
+   - URL: http://localhost:3000
+
+2. **Through the canister ID**:
+   - URL: http://localhost:4943/?canisterId=<frontend-canister-id>
+   - You can find your canister ID in the `.env` file or through `dfx canister id icp_studio_frontend`
 
 ## Contributing
 

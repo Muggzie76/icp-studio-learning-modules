@@ -102,7 +102,7 @@
 
 ## Phase 6: Deployment & Launch Preparation
 
-- [ ] 20. Deploy to local test environment
+- [x] 20. Deploy to local test environment
     - Verify all functionality works locally
     - Address any issues discovered
 

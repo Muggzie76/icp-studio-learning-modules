@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { AuthClient } from '@dfinity/auth-client';
 import { icp_studio_backend } from '../../../declarations/icp_studio_backend';
+import apiService from '../services/api';
 
 // Create authentication context
 const AuthContext = createContext();
@@ -13,6 +14,7 @@ export function AuthProvider({ children }) {
   const [principal, setPrincipal] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [actor, setActor] = useState(null);
 
   // Initialize auth client
   useEffect(() => {
@@ -31,10 +33,17 @@ export function AuthProvider({ children }) {
           const principal = identity.getPrincipal();
           setPrincipal(principal);
           
+          // Initialize backend actor with identity
+          const actorInstance = icp_studio_backend;
+          setActor(actorInstance);
+          
+          // Initialize API service with the actor
+          apiService.initialize(actorInstance);
+          
           // Check if user is admin
           try {
-            const adminStatus = await icp_studio_backend.isUserAdmin(principal);
-            setIsAdmin(adminStatus);
+            const adminResult = await apiService.isAdmin(principal);
+            setIsAdmin(adminResult.success && adminResult.data === true);
           } catch (error) {
             console.error("Error checking admin status:", error);
             setIsAdmin(false);
@@ -72,10 +81,17 @@ export function AuthProvider({ children }) {
           const principal = identity.getPrincipal();
           setPrincipal(principal);
           
+          // Initialize backend actor with identity
+          const actorInstance = icp_studio_backend;
+          setActor(actorInstance);
+          
+          // Initialize API service with the actor
+          apiService.initialize(actorInstance);
+          
           // Check if user is admin
           try {
-            const adminStatus = await icp_studio_backend.isUserAdmin(principal);
-            setIsAdmin(adminStatus);
+            const adminResult = await apiService.isAdmin(principal);
+            setIsAdmin(adminResult.success && adminResult.data === true);
           } catch (error) {
             console.error("Error checking admin status:", error);
             setIsAdmin(false);
@@ -96,6 +112,10 @@ export function AuthProvider({ children }) {
     setIdentity(null);
     setPrincipal(null);
     setIsAdmin(false);
+    setActor(null);
+    
+    // Reset API service
+    apiService.initialize(null);
   };
 
   // Provide the auth context to children components
@@ -107,6 +127,7 @@ export function AuthProvider({ children }) {
         principal,
         isAdmin,
         isLoading,
+        actor,
         login,
         logout,
       }}

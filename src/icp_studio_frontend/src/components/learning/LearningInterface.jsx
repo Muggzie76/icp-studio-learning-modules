@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import apiService from '../../services/api';
 
 const LearningInterface = () => {
-  const { actor, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,19 +16,26 @@ const LearningInterface = () => {
   // Fetch modules and user progress
   useEffect(() => {
     const fetchData = async () => {
-      if (!isAuthenticated || !actor) return;
+      if (!isAuthenticated) return;
       
       try {
         setLoading(true);
         
         // Get available modules
-        const availableModules = await actor.getAvailableModules();
-        setModules(availableModules);
+        const modulesResult = await apiService.getAvailableModules();
+        if (!modulesResult.success) {
+          setError(modulesResult.error || 'Failed to load modules');
+          setLoading(false);
+          return;
+        }
+        setModules(modulesResult.data);
         
         // Get user progress
-        const progressResult = await actor.getMyProgress();
-        if ('ok' in progressResult) {
-          setUserProgress(progressResult.ok);
+        const progressResult = await apiService.getMyProfile();
+        if (progressResult.success) {
+          setUserProgress(progressResult.data);
+        } else {
+          console.error('Error loading user progress:', progressResult.error);
         }
         
         setLoading(false);
@@ -39,7 +47,7 @@ const LearningInterface = () => {
     };
     
     fetchData();
-  }, [actor, isAuthenticated]);
+  }, [isAuthenticated]);
 
   // Helper to check if module is completed
   const isModuleCompleted = (moduleId) => {
@@ -64,14 +72,14 @@ const LearningInterface = () => {
 
   // Start a module
   const handleStartModule = async (moduleId) => {
-    if (!isAuthenticated || !actor) return;
+    if (!isAuthenticated) return;
     
     try {
-      const result = await actor.startModule(moduleId);
-      if ('ok' in result) {
-        navigate(`/learn/module/${moduleId}`);
+      const result = await apiService.startModule(moduleId);
+      if (result.success) {
+        navigate(`/module/${moduleId}`);
       } else {
-        setError('Failed to start module: ' + ('err' in result ? result.err : 'Unknown error'));
+        setError('Failed to start module: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Error starting module:', err);

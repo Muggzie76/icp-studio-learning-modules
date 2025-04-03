@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import apiService from '../../services/api';
 
 const UserProfile = () => {
-  const { actor, isAuthenticated, principal } = useAuth();
+  const { isAuthenticated, principal } = useAuth();
   const [userProfile, setUserProfile] = useState(null);
   const [modules, setModules] = useState([]);
   const [achievements, setAchievements] = useState([]);
@@ -12,27 +13,33 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!isAuthenticated || !actor) return;
+      if (!isAuthenticated) return;
       
       try {
         setLoading(true);
         
         // Fetch user profile data
-        const profileResult = await actor.getMyProfile();
-        if ('ok' in profileResult) {
-          setUserProfile(profileResult.ok);
+        const profileResult = await apiService.getMyProfile();
+        if (profileResult.success) {
+          setUserProfile(profileResult.data);
         } else {
-          setError('Failed to load user profile');
+          setError(profileResult.error || 'Failed to load user profile');
         }
         
         // Fetch available modules for reference
-        const modulesData = await actor.getAvailableModules();
-        setModules(modulesData);
+        const modulesResult = await apiService.getAvailableModules();
+        if (modulesResult.success) {
+          setModules(modulesResult.data);
+        } else {
+          console.error('Error loading modules:', modulesResult.error);
+        }
         
         // Fetch user achievements
-        const achievementsResult = await actor.getUserAchievements(principal);
-        if ('ok' in achievementsResult) {
-          setAchievements(achievementsResult.ok);
+        const achievementsResult = await apiService.getUserAchievements(principal);
+        if (achievementsResult.success) {
+          setAchievements(achievementsResult.data);
+        } else {
+          console.error('Error loading achievements:', achievementsResult.error);
         }
         
         setLoading(false);
@@ -44,7 +51,7 @@ const UserProfile = () => {
     };
     
     fetchUserData();
-  }, [actor, isAuthenticated, principal]);
+  }, [isAuthenticated, principal]);
   
   // Calculate completion percentage
   const calculateProgress = () => {

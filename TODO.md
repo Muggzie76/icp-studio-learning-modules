@@ -85,12 +85,12 @@
 
 ## Phase 5: Integration & Testing
 
-- [ ] 17. Connect frontend to backend
+- [x] 17. Connect frontend to backend
     - Implement API call structure
     - Set up error handling
     - Create loading states
 
-- [ ] 18. Write comprehensive test suite
+- [x] 18. Write comprehensive test suite
     - Unit tests for Motoko functions
     - Integration tests for frontend-backend communication
     - UI component tests

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import apiService from '../../services/api';
 
 const ModuleContent = () => {
   const { moduleId } = useParams();
-  const { actor, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   const [module, setModule] = useState(null);
@@ -22,38 +23,42 @@ const ModuleContent = () => {
   // Fetch module data
   useEffect(() => {
     const fetchModuleData = async () => {
-      if (!isAuthenticated || !actor || !moduleId) return;
+      if (!isAuthenticated || !moduleId) return;
       
       try {
         setLoading(true);
         
         // Get module details
-        const moduleData = await actor.getModule(Number(moduleId));
-        if (!moduleData) {
-          setError('Module not found');
+        const moduleResult = await apiService.getModule(Number(moduleId));
+        if (!moduleResult.success) {
+          setError(moduleResult.error || 'Failed to load module');
           setLoading(false);
           return;
         }
         
-        setModule(moduleData);
+        setModule(moduleResult.data);
         
         // Get module content
-        const contentResult = await actor.getModuleContent(Number(moduleId));
-        if ('ok' in contentResult) {
-          setContent(contentResult.ok);
+        const contentResult = await apiService.getModuleContent(Number(moduleId));
+        if (contentResult.success) {
+          setContent(contentResult.data);
+        } else {
+          console.error('Error loading module content:', contentResult.error);
         }
         
         // Get module questions
-        const questionsResult = await actor.getModuleQuestions(Number(moduleId));
-        if ('ok' in questionsResult) {
-          setQuestions(questionsResult.ok);
+        const questionsResult = await apiService.getModuleQuestions(Number(moduleId));
+        if (questionsResult.success) {
+          setQuestions(questionsResult.data);
           
           // Initialize answers state
           const initialAnswers = {};
-          questionsResult.ok.forEach(question => {
+          questionsResult.data.forEach(question => {
             initialAnswers[question.id] = null;
           });
           setAnswers(initialAnswers);
+        } else {
+          console.error('Error loading module questions:', questionsResult.error);
         }
         
         setLoading(false);
@@ -65,7 +70,7 @@ const ModuleContent = () => {
     };
     
     fetchModuleData();
-  }, [actor, isAuthenticated, moduleId]);
+  }, [isAuthenticated, moduleId]);
   
   // Handle navigation between content blocks
   const handleNextContent = () => {
@@ -93,7 +98,7 @@ const ModuleContent = () => {
   
   // Submit quiz answers
   const handleSubmitQuiz = async () => {
-    if (!isAuthenticated || !actor) return;
+    if (!isAuthenticated) return;
     
     // Check if all questions are answered
     const allAnswered = questions.every(question => answers[question.id] !== null);
@@ -110,18 +115,18 @@ const ModuleContent = () => {
         Number(optionId)
       ]);
       
-      const result = await actor.submitQuizAnswers(Number(moduleId), answersArray);
+      const result = await apiService.submitQuizAnswers(Number(moduleId), answersArray);
       setQuizSubmitted(true);
       
-      if ('ok' in result) {
+      if (result.success) {
         setQuizResult({
-          passed: result.ok > 0,
-          tokensEarned: result.ok
+          passed: result.data > 0,
+          tokensEarned: result.data
         });
       } else {
         setQuizResult({
           passed: false,
-          error: 'err' in result ? result.err : 'Failed to submit quiz'
+          error: result.error || 'Failed to submit quiz'
         });
       }
     } catch (err) {

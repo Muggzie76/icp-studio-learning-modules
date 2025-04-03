@@ -151,6 +151,69 @@ After deployment, you can access the application in two ways:
    - URL: http://localhost:4943/?canisterId=<frontend-canister-id>
    - You can find your canister ID in the `.env` file or through `dfx canister id icp_studio_frontend`
 
+### Testnet Deployment
+
+To deploy the ICP Studio application to the ICP testnet, follow these steps:
+
+1. **Make sure you have a wallet with sufficient cycles**
+
+   Check your cycles balance:
+   ```bash
+   dfx wallet --network ic balance
+   ```
+
+   If you need cycles, you can get them from the cycles faucet or by converting ICP tokens.
+
+2. **Deploy to testnet using the automated script**
+
+   ```bash
+   npm run testnet:deploy
+   ```
+
+   This script will:
+   - Verify you have sufficient cycles
+   - Build the project
+   - Generate type declarations
+   - Deploy canisters to the testnet
+   - Save deployment information for monitoring
+
+3. **Verify the testnet deployment**
+
+   ```bash
+   npm run testnet:verify
+   ```
+
+   This will check:
+   - If canister IDs are accessible
+   - Frontend response time
+   - Backend canister status and cycles
+   - Backend response time (performance testing)
+
+4. **Monitor cycles consumption and performance**
+
+   To monitor your testnet deployment and save results to a log file:
+   ```bash
+   npm run testnet:monitor
+   ```
+
+   This command will run the verification script and save detailed metrics to a timestamped log file, which is useful for:
+   - Tracking cycles consumption over time
+   - Monitoring performance changes
+   - Estimating canister lifetime
+
+### Accessing Testnet Canisters
+
+After testnet deployment, you can access your application at:
+
+- Frontend: `https://<frontend-canister-id>.ic0.app/`
+- Backend: `https://<backend-canister-id>.ic0.app/`
+
+The canister IDs can be found in the `deploy-info.txt` file created during deployment or by running:
+```bash
+dfx canister --network ic id icp_studio_frontend
+dfx canister --network ic id icp_studio_backend
+```
+
 ## Contributing
 
 1. Fork the repository

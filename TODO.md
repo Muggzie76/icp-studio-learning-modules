@@ -106,7 +106,7 @@
     - Verify all functionality works locally
     - Address any issues discovered
 
-- [ ] 21. Deploy to ICP testnet
+- [x] 21. Deploy to ICP testnet
     - Test network connectivity
     - Measure performance
     - Verify cycles consumption

@@ -18,7 +18,10 @@
     "local:test": "npm run build && dfx deploy --network local",
     "local:dev": "npm run dfx:start && npm run build && npm run dfx:deploy:local && npm run start",
     "local:verify": "node src/scripts/check-deployment.js",
-    "local:deploy": "chmod +x src/scripts/deploy-local.sh && src/scripts/deploy-local.sh"
+    "local:deploy": "chmod +x src/scripts/deploy-local.sh && src/scripts/deploy-local.sh",
+    "testnet:deploy": "chmod +x src/scripts/deploy-testnet.sh && src/scripts/deploy-testnet.sh",
+    "testnet:verify": "node src/scripts/check-testnet.js",
+    "testnet:monitor": "node src/scripts/check-testnet.js > testnet-monitor-$(date +%Y%m%d-%H%M%S).log"
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",

@@ -1,4 +1,105 @@
-# `icp_studio`
+# ICP Studio
+
+A decentralized training platform designed to teach users key skills for Dapp development on the Internet Computer. The platform consists of 12 interactive modules, each with lessons, tasks, and quizzes. Users earn rewards upon completing each module, stored and managed on-chain via smart contracts.
+
+## Project Structure
+
+```
+icp_studio/
+├── src/
+│   ├── icp_studio_backend/     # Motoko backend canister
+│   └── icp_studio_frontend/    # React frontend application
+├── dfx.json                    # DFINITY project configuration
+├── package.json               # Node.js dependencies
+└── tsconfig.json             # TypeScript configuration
+```
+
+## Features
+
+- 12 interactive training modules
+- On-chain progress tracking
+- Token-based reward system
+- Admin CMS for content management
+- Quiz-based module completion
+- Secure authentication via Internet Identity
+
+## Prerequisites
+
+- Node.js (v14 or higher)
+- DFINITY Canister SDK (dfx)
+- Internet Computer CLI
+- A modern web browser
+
+## Setup Instructions
+
+1. Install DFINITY Canister SDK:
+   ```bash
+   sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+   ```
+
+2. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   cd icp_studio
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Start the local replica:
+   ```bash
+   dfx start --background
+   ```
+
+5. Deploy the project locally:
+   ```bash
+   dfx deploy
+   ```
+
+## Development
+
+- Backend (Motoko):
+  - Located in `src/icp_studio_backend/`
+  - Handles module logic, user progress, and rewards
+  - Uses stable variables for persistent storage
+
+- Frontend (React):
+  - Located in `src/icp_studio_frontend/`
+  - Built with React and TypeScript
+  - Integrates with Internet Identity for authentication
+
+## Testing
+
+Run the test suite:
+```bash
+npm test
+```
+
+## Deployment
+
+1. Ensure you have cycles in your wallet:
+   ```bash
+   dfx wallet balance
+   ```
+
+2. Deploy to mainnet:
+   ```bash
+   dfx deploy --network ic
+   ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 Welcome to your new `icp_studio` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
 
